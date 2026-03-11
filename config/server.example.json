@@ -1,0 +1,22 @@
+{
+    "grpc_listen_address": "0.0.0.0:50051",
+
+    "kafka": {
+        "brokers": "localhost:9092",
+        "security_protocol": "PLAINTEXT",
+        "sasl_mechanism": "",
+        "sasl_username": "",
+        "sasl_password": "",
+        "default_group_id": "kafka-mcp-server",
+        "fetch_max_bytes": 1048576,
+        "session_timeout_ms": 10000
+    },
+
+    "log_level": "info",
+    "log_file": "",
+
+    "token_efficiency": {
+        "max_messages_per_request": 10,
+        "max_response_size_bytes": 65536
+    }
+}

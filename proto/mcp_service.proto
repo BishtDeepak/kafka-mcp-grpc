@@ -1,0 +1,74 @@
+syntax = "proto3";
+
+package mcp.v1;
+
+option cc_generic_services = false;
+
+// ============================================================
+// MCP Core Types — aligned with MCP specification
+// ============================================================
+
+// Represents a single MCP Tool definition
+message ToolDefinition {
+    string name        = 1;  // e.g. "kafka_consume_messages"
+    string description = 2;  // Human-readable description for LLM
+    string input_schema = 3; // JSON Schema string for input validation
+}
+
+// Generic key-value parameter map for tool inputs
+message ToolCallRequest {
+    string tool_name              = 1;
+    map<string, string> params    = 2;  // Tool input parameters
+    string request_id             = 3;  // Unique request ID for tracing
+}
+
+// Tool call response — normalized output for LLM consumption
+message ToolCallResponse {
+    string request_id             = 1;
+    bool   is_error               = 2;
+    string content                = 3;  // JSON string — normalized output
+    string error_message          = 4;  // Populated only if is_error = true
+    int64  token_count_estimate   = 5;  // Token efficiency tracking
+}
+
+// List available tools request
+message ListToolsRequest {
+    string filter = 1; // Optional: filter by prefix e.g. "kafka_"
+}
+
+// List available tools response
+message ListToolsResponse {
+    repeated ToolDefinition tools = 1;
+    int32 total_count             = 2;
+}
+
+// Health check
+message HealthCheckRequest {}
+message HealthCheckResponse {
+    enum Status {
+        UNKNOWN   = 0;
+        SERVING   = 1;
+        NOT_SERVING = 2;
+    }
+    Status status         = 1;
+    string version        = 2;
+    string kafka_status   = 3;  // "connected" | "disconnected"
+}
+
+// ============================================================
+// MCP gRPC Service
+// ============================================================
+service MCPService {
+
+    // List all available MCP tools
+    rpc ListTools(ListToolsRequest) returns (ListToolsResponse);
+
+    // Execute a tool call (unary — request/response)
+    rpc CallTool(ToolCallRequest) returns (ToolCallResponse);
+
+    // Execute a tool call with streaming response (for large Kafka reads)
+    rpc CallToolStreaming(ToolCallRequest) returns (stream ToolCallResponse);
+
+    // Health check
+    rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+}

@@ -1,0 +1,25 @@
+# Build output
+build/
+cmake-build-*/
+
+# Generated protobuf files
+generated/
+
+# Compiled objects
+*.o
+*.a
+*.so
+*.so.*
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Logs
+*.log
+
+# Config with secrets (keep the example, not the real one)
+config/server.json

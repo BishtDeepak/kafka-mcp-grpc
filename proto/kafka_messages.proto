@@ -1,0 +1,118 @@
+syntax = "proto3";
+
+package kafka.v1;
+
+// ============================================================
+// Kafka Domain Types — normalized for LLM consumption
+// ============================================================
+
+// A single Kafka message — normalized across different formats
+message KafkaMessage {
+    string  topic           = 1;
+    int32   partition       = 2;
+    int64   offset          = 3;
+    string  key             = 4;
+    string  value           = 5;  // UTF-8 decoded payload
+    int64   timestamp_ms    = 6;
+    map<string, string> headers = 7;
+}
+
+// Topic metadata
+message TopicInfo {
+    string  name                        = 1;
+    int32   partition_count             = 2;
+    int32   replication_factor          = 3;
+    repeated PartitionInfo partitions   = 4;
+    map<string, string> configs         = 5;
+}
+
+// Partition metadata
+message PartitionInfo {
+    int32   partition_id    = 1;
+    int64   earliest_offset = 2;
+    int64   latest_offset   = 3;
+    int64   message_count   = 4;
+    int32   leader          = 5;
+    repeated int32 replicas = 6;
+    repeated int32 isr      = 7; // In-sync replicas
+}
+
+// Consumer group info
+message ConsumerGroupInfo {
+    string  group_id                        = 1;
+    string  state                           = 2;  // "Stable", "Rebalancing", etc.
+    repeated ConsumerGroupMemberInfo members = 3;
+    repeated ConsumerGroupLag lag_info      = 4;
+}
+
+// Consumer group member
+message ConsumerGroupMemberInfo {
+    string member_id    = 1;
+    string client_id    = 2;
+    string host         = 3;
+}
+
+// Consumer group lag per partition
+message ConsumerGroupLag {
+    string  topic           = 1;
+    int32   partition       = 2;
+    int64   current_offset  = 3;
+    int64   log_end_offset  = 4;
+    int64   lag             = 5;  // log_end_offset - current_offset
+}
+
+// Broker info
+message BrokerInfo {
+    int32   broker_id   = 1;
+    string  host        = 2;
+    int32   port        = 3;
+    bool    is_controller = 4;
+}
+
+// Cluster metadata
+message ClusterMetadata {
+    string  cluster_id              = 1;
+    repeated BrokerInfo brokers     = 2;
+    repeated TopicInfo topics       = 3;
+    int32   controller_id           = 4;
+}
+
+// ============================================================
+// Kafka Tool Request/Response types
+// ============================================================
+
+// Consume request parameters
+message ConsumeRequest {
+    string  topic           = 1;
+    int32   partition       = 2;  // -1 for all partitions
+    int64   offset          = 3;  // -1 for latest, -2 for earliest
+    int32   max_messages    = 4;  // Default: 10 (token efficiency)
+    int32   timeout_ms      = 5;  // Default: 5000
+    string  group_id        = 6;  // Optional consumer group
+}
+
+// Consume response
+message ConsumeResponse {
+    repeated KafkaMessage messages   = 1;
+    int32   total_fetched            = 2;
+    string  topic                    = 3;
+    int64   token_estimate           = 4;  // Token efficiency metric
+}
+
+// Produce request
+message ProduceRequest {
+    string  topic   = 1;
+    string  key     = 2;
+    string  value   = 3;
+    map<string, string> headers = 4;
+    int32   partition = 5;  // -1 for auto
+}
+
+// Produce response
+message ProduceResponse {
+    string  topic       = 1;
+    int32   partition   = 2;
+    int64   offset      = 3;
+    bool    success     = 4;
+    string  error       = 5;
+}
