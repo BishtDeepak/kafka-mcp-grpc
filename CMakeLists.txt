@@ -114,6 +114,8 @@ set(MCP_SRCS
     src/mcp/mcp_handler.cpp
     src/mcp/tool_definitions.cpp
     src/mcp/response_builder.cpp
+    src/mcp/stdio_transport.cpp
+    src/mcp/mcp_dispatcher.cpp
 )
 
 set(UTILS_SRCS

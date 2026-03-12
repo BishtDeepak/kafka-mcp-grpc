@@ -10,7 +10,8 @@
 class Logger {
 public:
     static void init(const std::string& level = "info",
-                     const std::string& log_file = "");
+                     const std::string& log_file = "",
+                    bool use_stderr=true);
     static void shutdown();
 };
 
