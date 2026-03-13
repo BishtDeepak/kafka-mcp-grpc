@@ -23,7 +23,7 @@ void MCPHandler::register_tools() {
         return handle_consume_messages(req, resp); };
     tool_registry_["produce_message"]      = [this](auto& req, auto& resp) {
         return handle_produce_message(req, resp); };
-    tool_registry_["list_topics"]          = [this](auto& req, auto& resp) {
+    tool_registry_["listTopics"]          = [this](auto& req, auto& resp) {
         return handle_list_topics(req, resp); };
     tool_registry_["describe_topic"]       = [this](auto& req, auto& resp) {
         return handle_describe_topic(req, resp); };
@@ -210,7 +210,7 @@ grpc::Status MCPHandler::handle_produce_message(
 grpc::Status MCPHandler::handle_list_topics(
     const mcp::v1::ToolCallRequest& /*req*/, mcp::v1::ToolCallResponse& resp)
 {
-    auto topics = admin_->list_topics();
+    auto topics = admin_->listTopics();
     response_builder_.build_topics_response(resp, topics);
     return grpc::Status::OK;
 }

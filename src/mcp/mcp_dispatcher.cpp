@@ -32,7 +32,7 @@ DispatchResult MCPDispatcher::dispatch(const std::string& tool_name,
 
     if (tool_name == "consume_messages")     return dispatch_consume_messages(args);
     if (tool_name == "produce_message")      return dispatch_produce_message(args);
-    if (tool_name == "list_topics")          return dispatch_list_topics(args);
+    if (tool_name == "listTopics")          return dispatch_list_topics(args);
     if (tool_name == "describe_topic")       return dispatch_describe_topic(args);
     if (tool_name == "list_consumer_groups") return dispatch_list_consumer_groups(args);
     if (tool_name == "consumer_group_lag")   return dispatch_consumer_group_lag(args);
@@ -127,7 +127,7 @@ DispatchResult MCPDispatcher::dispatch_list_topics(const json& args) {
     LOG_INFO("MCPDispatcher: list_topics filter='{}'", filter);
 
     try {
-        auto topics = admin_->list_topics();
+        auto topics = admin_->listTopics();
 
         json result = {
             {"topic_count", (int)topics.size()},

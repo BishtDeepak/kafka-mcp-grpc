@@ -39,7 +39,8 @@ nlohmann::json ConsumerGroupLag::to_json() const {
 // ============================================================
 
 KafkaAdmin::KafkaAdmin(const KafkaConfig& config)
-    : config_(config) {}
+    :    config_(config) {
+}
 
 KafkaAdmin::~KafkaAdmin() {
     disconnect();
@@ -49,26 +50,24 @@ std::unique_ptr<RdKafka::Conf> KafkaAdmin::build_rdkafka_conf() {
     std::string errstr;
     auto conf = std::unique_ptr<RdKafka::Conf>(
         RdKafka::Conf::create(RdKafka::Conf::CONF_GLOBAL));
-
     auto set = [&](const std::string& key, const std::string& val) {
         if (conf->set(key, val, errstr) != RdKafka::Conf::CONF_OK)
             throw std::runtime_error("rdkafka conf error [" + key + "]: " + errstr);
     };
-
     set("bootstrap.servers", config_.brokers);
     set("security.protocol", config_.security_protocol);
-
     if (!config_.sasl_mechanism.empty()) {
         set("sasl.mechanism", config_.sasl_mechanism);
         set("sasl.username",  config_.sasl_username);
         set("sasl.password",  config_.sasl_password);
     }
-
     return conf;
 }
 
 bool KafkaAdmin::connect() {
-    if (connected_) return true;
+    if (connected_) {
+        return true;
+    }
     try {
         auto conf = build_rdkafka_conf();
         std::string errstr;
@@ -98,73 +97,82 @@ bool KafkaAdmin::is_connected() const {
 }
 
 // Helper: fetch cluster metadata from broker
-static RdKafka::Metadata* fetch_metadata(RdKafka::Producer* client,
-                                          const std::string& topic = "",
-                                          int timeout_ms = 5000) {
-    RdKafka::Metadata* md = nullptr;
+static RdKafka::Metadata* fetch_metadata(
+    RdKafka::Producer* client,
+    const std::string& topic = "",
+    int timeoutMs = 5000) {
+    RdKafka::Metadata* metaDataP = nullptr;
     RdKafka::ErrorCode err;
-
     if (topic.empty()) {
-        err = client->metadata(true, nullptr, &md, timeout_ms);
+        err = client->metadata(true, nullptr, &metaDataP, timeoutMs);
     } else {
-        // Create a temporary topic handle to scope metadata fetch
         std::string errstr;
-        auto* tconf = RdKafka::Conf::create(RdKafka::Conf::CONF_TOPIC);
-        auto* th = RdKafka::Topic::create(client, topic, tconf, errstr);
-        delete tconf;
-        if (!th) return nullptr;
-        err = client->metadata(false, th, &md, timeout_ms);
-        delete th;
-    }
+        // 1. Create a temporary topic configuration
+        std::unique_ptr<RdKafka::Conf> topicConf(RdKafka::Conf::create(RdKafka::Conf::CONF_TOPIC));
+        
+        // 2. Create the Topic handle (This is what metadata() actually needs)
+        std::unique_ptr<RdKafka::Topic> topicHandle(
+            RdKafka::Topic::create(client, topic, topicConf.get(), errstr)
+        );
+        if (!topicHandle) {
+            LOG_ERROR("Failed to create topic handle for metadata: {}", errstr);
+            return nullptr;
+        }
 
+        // 3. Pass the topic handle using .get()
+        err = client->metadata(false, topicHandle.get(), &metaDataP, timeoutMs);
+    }
     if (err != RdKafka::ERR_NO_ERROR) {
         LOG_ERROR("metadata fetch failed: {}", RdKafka::err2str(err));
         return nullptr;
     }
-    return md;
+    return metaDataP;
 }
 
-std::vector<TopicMetadata> KafkaAdmin::list_topics() {
+std::vector<TopicMetadata> KafkaAdmin::listTopics() {
     std::vector<TopicMetadata> result;
-    if (!connected_ && !connect()) return result;
-
-    auto* md = fetch_metadata(admin_client_.get());
-    if (!md) return result;
-
-    for (const auto* t : *md->topics()) {
-        if (t->err() != RdKafka::ERR_NO_ERROR) continue;
+    if (!connected_ && !connect()) {
+        return result;
+    }
+    auto* mdP = fetch_metadata(admin_client_.get());
+    if (!mdP) {
+        return result;
+    }
+    for (const auto* topicP : *mdP->topics()) {
+        if (topicP->err() != RdKafka::ERR_NO_ERROR) continue;
         TopicMetadata tm;
-        tm.name            = t->topic();
-        tm.partition_count = static_cast<int32_t>(t->partitions()->size());
+        tm.name            = topicP->topic();
+        tm.partition_count = static_cast<int32_t>(topicP->partitions()->size());
         // replication_factor: read from first partition's replicas
         tm.replication_factor = tm.partition_count > 0
-            ? static_cast<int32_t>((*t->partitions())[0]->replicas()->size())
+            ? static_cast<int32_t>((*topicP->partitions())[0]->replicas()->size())
             : 0;
-        result.push_back(std::move(tm));
+        result.emplace_back(std::move(tm));
     }
-
-    delete md;
-    LOG_DEBUG("list_topics: found {} topics", result.size());
+    delete mdP;
+    LOG_DEBUG("listTopics: found {} topics", result.size());
     return result;
 }
 
-TopicMetadata KafkaAdmin::describe_topic(const std::string& topic_name) {
-    if (!connected_ && !connect()) return {};
-
-    auto* md = fetch_metadata(admin_client_.get(), topic_name);
-    if (!md) return {};
-
+TopicMetadata KafkaAdmin::describe_topic(const std::string& topicStr) {
+    if (!connected_ && !connect()) {
+        return {};
+    }
+    auto* mdP = fetch_metadata(admin_client_.get(), topicStr);
+    if (!mdP) {
+        return {};
+    }
     TopicMetadata tm;
-    for (const auto* t : *md->topics()) {
-        if (t->topic() != topic_name) continue;
-        tm.name            = t->topic();
-        tm.partition_count = static_cast<int32_t>(t->partitions()->size());
+    for (const auto* topicP : *mdP->topics()) {
+        if (topicP->topic() != topicStr) continue;
+        tm.name            = topicP->topic();
+        tm.partition_count = static_cast<int32_t>(topicP->partitions()->size());
         tm.replication_factor = tm.partition_count > 0
-            ? static_cast<int32_t>((*t->partitions())[0]->replicas()->size())
+            ? static_cast<int32_t>((*topicP->partitions())[0]->replicas()->size())
             : 0;
         break;
     }
-    delete md;
+    delete mdP;
     return tm;
 }
 
@@ -193,23 +201,25 @@ std::vector<ConsumerGroupLag> KafkaAdmin::get_consumer_group_lag(
 
 std::vector<BrokerMetadata> KafkaAdmin::get_brokers() {
     std::vector<BrokerMetadata> result;
-    if (!connected_ && !connect()) return result;
+    if (!connected_ && !connect()) {
+        return result;
+    }
+    auto* mdP = fetch_metadata(admin_client_.get());
+    if (!mdP) {
+        return result;
+    }
+    int32_t controller_id = mdP->orig_broker_id();
 
-    auto* md = fetch_metadata(admin_client_.get());
-    if (!md) return result;
-
-    int32_t controller_id = md->orig_broker_id();
-
-    for (const auto* b : *md->brokers()) {
+    for (const auto* broker : *mdP->brokers()) {
         BrokerMetadata bm;
-        bm.broker_id     = b->id();
-        bm.host          = b->host();
-        bm.port          = b->port();
-        bm.is_controller = (b->id() == controller_id);
-        result.push_back(std::move(bm));
+        bm.broker_id     = broker->id();
+        bm.host          = broker->host();
+        bm.port          = broker->port();
+        bm.is_controller = (broker->id() == controller_id);
+        result.emplace_back(std::move(bm));
     }
 
-    delete md;
+    delete mdP;
     LOG_DEBUG("get_brokers: found {} brokers", result.size());
     return result;
 }

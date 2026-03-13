@@ -270,9 +270,9 @@ json StdioTransport::build_tool_schemas() {
             }}
         },
 
-        // --- list_topics ---
+        // --- listTopics ---
         {
-            {"name", "list_topics"},
+            {"name", "listTopics"},
             {"description", "List all topics available in the Kafka cluster."},
             {"inputSchema", {
                 {"type", "object"},

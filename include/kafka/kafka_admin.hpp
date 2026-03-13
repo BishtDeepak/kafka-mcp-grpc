@@ -54,7 +54,7 @@ public:
     bool is_connected() const;
 
     // List all topics
-    std::vector<TopicMetadata> list_topics();
+    std::vector<TopicMetadata> listTopics();
 
     // Describe a specific topic
     TopicMetadata describe_topic(const std::string& topic_name);
