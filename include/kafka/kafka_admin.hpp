@@ -57,7 +57,8 @@ public:
     std::vector<TopicMetadata> listTopics();
 
     // Describe a specific topic
-    TopicMetadata describe_topic(const std::string& topic_name);
+    TopicMetadata describe_topic(
+        const std::string& topic_name);
 
     // List consumer groups
     std::vector<std::string> list_consumer_groups();
@@ -65,15 +66,15 @@ public:
     // Get consumer group lag
     std::vector<ConsumerGroupLag> get_consumer_group_lag(
         const std::string& group_id,
-        const std::string& topic = ""  // empty = all topics
-    );
-
+        const std::string& topic = "");
+    
     // Get broker/cluster metadata
     std::vector<BrokerMetadata> get_brokers();
 
 private:
     KafkaConfig                         config_;
-    std::unique_ptr<RdKafka::Producer>  admin_client_; // Admin ops via producer handle
+    // Admin ops via producer handle
+    std::unique_ptr<RdKafka::Producer>  admin_client_;
     bool                                connected_{false};
 
     std::unique_ptr<RdKafka::Conf> build_rdkafka_conf();

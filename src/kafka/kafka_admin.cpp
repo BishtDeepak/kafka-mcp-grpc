@@ -46,7 +46,8 @@ KafkaAdmin::~KafkaAdmin() {
     disconnect();
 }
 
-std::unique_ptr<RdKafka::Conf> KafkaAdmin::build_rdkafka_conf() {
+std::unique_ptr<RdKafka::Conf>
+KafkaAdmin::build_rdkafka_conf() {
     std::string errstr;
     auto conf = std::unique_ptr<RdKafka::Conf>(
         RdKafka::Conf::create(RdKafka::Conf::CONF_GLOBAL));
@@ -64,7 +65,8 @@ std::unique_ptr<RdKafka::Conf> KafkaAdmin::build_rdkafka_conf() {
     return conf;
 }
 
-bool KafkaAdmin::connect() {
+bool
+KafkaAdmin::connect() {
     if (connected_) {
         return true;
     }
@@ -86,18 +88,21 @@ bool KafkaAdmin::connect() {
     }
 }
 
-void KafkaAdmin::disconnect() {
+void
+KafkaAdmin::disconnect() {
     admin_client_ = nullptr;
     connected_ = false;
     LOG_INFO("KafkaAdmin disconnected");
 }
 
-bool KafkaAdmin::is_connected() const {
+bool
+KafkaAdmin::is_connected() const {
     return connected_;
 }
 
 // Helper: fetch cluster metadata from broker
-static RdKafka::Metadata* fetch_metadata(
+static RdKafka::Metadata*
+fetch_metadata(
     RdKafka::Producer* client,
     const std::string& topic = "",
     int timeoutMs = 5000) {
@@ -129,7 +134,8 @@ static RdKafka::Metadata* fetch_metadata(
     return metaDataP;
 }
 
-std::vector<TopicMetadata> KafkaAdmin::listTopics() {
+std::vector<TopicMetadata>
+KafkaAdmin::listTopics() {
     std::vector<TopicMetadata> result;
     if (!connected_ && !connect()) {
         return result;
@@ -154,7 +160,8 @@ std::vector<TopicMetadata> KafkaAdmin::listTopics() {
     return result;
 }
 
-TopicMetadata KafkaAdmin::describe_topic(const std::string& topicStr) {
+TopicMetadata
+KafkaAdmin::describe_topic(const std::string& topicStr) {
     if (!connected_ && !connect()) {
         return {};
     }
@@ -176,7 +183,8 @@ TopicMetadata KafkaAdmin::describe_topic(const std::string& topicStr) {
     return tm;
 }
 
-std::vector<std::string> KafkaAdmin::list_consumer_groups() {
+std::vector<std::string>
+KafkaAdmin::list_consumer_groups() {
     // librdkafka 1.6 does not have a high-level ListConsumerGroups admin API.
     // Return an informative placeholder; upgrade to 2.x for full support.
     LOG_WARN("list_consumer_groups: requires librdkafka >= 2.0. "
@@ -184,22 +192,22 @@ std::vector<std::string> KafkaAdmin::list_consumer_groups() {
     return {};
 }
 
-std::vector<ConsumerGroupLag> KafkaAdmin::get_consumer_group_lag(
+std::vector<ConsumerGroupLag>
+KafkaAdmin::get_consumer_group_lag(
     const std::string& group_id,
-    const std::string& topic)
-{
+    const std::string& topic) {
     // Full consumer group lag requires AdminClient::ListConsumerGroupOffsets
     // (available in librdkafka >= 2.0). With 1.6 we can only approximate
     // by comparing committed vs. high-water-mark offsets using a consumer handle.
     LOG_WARN("get_consumer_group_lag: limited support in librdkafka 1.6. "
              "group={} topic={}", group_id, topic.empty() ? "(all)" : topic);
-
     std::vector<ConsumerGroupLag> result;
     // Stub — returns empty. Upgrade rdkafka to 2.x for full implementation.
     return result;
 }
 
-std::vector<BrokerMetadata> KafkaAdmin::get_brokers() {
+std::vector<BrokerMetadata>
+KafkaAdmin::get_brokers() {
     std::vector<BrokerMetadata> result;
     if (!connected_ && !connect()) {
         return result;

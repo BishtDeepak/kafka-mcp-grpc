@@ -233,3 +233,20 @@ std::vector<KafkaMessageNormalized> KafkaConsumer::consume_group(
               results.size(), topic, group_id);
     return results;
 }
+
+bool
+KafkaConsumer::getMinMaxOffset(
+    const std::string& topic,
+    int64_t &lowOffset,
+    int64_t &highOffset, int partition) const {
+    bool status = true;
+    RdKafka::ErrorCode err = consumer_->query_watermark_offsets(topic,
+        partition, &lowOffset, &highOffset, 5000);
+    if (err != RdKafka::ERR_NO_ERROR) {
+        LOG_WARN("Failed to query watermark offsets: {}", RdKafka::err2str(err));
+        status = false;
+    } else {
+        LOG_INFO("Query watermark lowOffset: {}, highOffset: {}", lowOffset, highOffset);
+    }
+    return status;
+}

@@ -43,7 +43,11 @@ public:
     bool connect();
     void disconnect();
     bool is_connected() const;
-
+    bool getMinMaxOffset(
+	const std::string &topic,
+        int64_t &lowOffset,
+        int64_t &highOffset,
+        int partition) const;
     // Consume messages from a topic/partition
     // max_messages limits token usage — default 10
     std::vector<KafkaMessageNormalized> consume(

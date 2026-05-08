@@ -27,9 +27,9 @@ message(STATUS "Project: ${PROJECT_NAME} v${PROJECT_VERSION}")
 # ============================================================
 # Prefer custom gRPC/Protobuf build over system install
 list(PREPEND CMAKE_PREFIX_PATH
-    "/mnt/data/AI/MCP-Project/grpc/.grpcLib"
+    "/home/dbisht/ws/AI/MCP-Project/grpc/.grpcLib"
 )
-set(Protobuf_ROOT "/mnt/data/AI/MCP-Project/grpc/.grpcLib")
+set(Protobuf_ROOT "/home/dbisht/ws/AI/MCP-Project/grpc/.grpcLib")
 
 find_package(Protobuf REQUIRED)
 find_package(gRPC CONFIG REQUIRED)

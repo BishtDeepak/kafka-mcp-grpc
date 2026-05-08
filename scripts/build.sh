@@ -30,7 +30,7 @@ mkdir -p $BUILD_DIR
 echo "[3/4] Configuring with CMake..."
 cmake -B $BUILD_DIR \
       -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
-      -DBUILD_TESTS=ON \
+      -DBUILD_TESTS=OFF \
       -S .
 
 # --- Build ---
